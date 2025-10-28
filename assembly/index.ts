@@ -1,6 +1,8 @@
 /** Allocate RGBA8 image in Wasm memory. */
 export function allocRGBA(size: usize): usize {
-  return heap.alloc(size * 4);
+  const ptr = heap.alloc(size * 4);
+  assert(ptr !== 0, "failed to allocate?");
+  return ptr;
 }
 
 export function freeRGBA(ptr: usize): void {

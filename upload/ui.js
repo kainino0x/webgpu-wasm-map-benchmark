@@ -44,6 +44,7 @@ export const timing = {
 };
 const fTiming = pane.addFolder({ title: 'Timing' });
 fTiming.addBinding(timing, 'total_cputime', { readonly: true, view: 'graph' });
+fTiming.addBlade({ view: 'separator' });
 fTiming.addBinding(timing, 'fillImage_cputime', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'writeTexture_cputime', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'render_cputime', { readonly: true, view: 'graph' });

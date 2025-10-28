@@ -1,31 +1,27 @@
 import { canvasHeightPane, config, timing } from './ui.js';
 import { device, ctx } from '../util.js';
-import * as Module from '../build/debug.js'; // FIXME
-
-/** Allocate RGBA8 image in Wasm memory and view it as a Uint32Array. */
-function allocWasmImage(width, height) {
-  const numPixels = width * height;
-  const ptr = Module.allocRGBA(numPixels);
-  return new Uint32Array(Module.memory.buffer, ptr, numPixels);
-}
+import * as Module from '../build/release.js';
 
 const w = 4096;
 let h = config.canvasHeight;
-let srcData, dstData;
+let srcDataPtr, dstDataPtr;
 let texture, bg;
 function reset() {
-  if (srcData) Module.freeRGBA(srcData.byteOffset);
-  if (dstData) Module.freeRGBA(dstData.byteOffset);
+  if (srcDataPtr) Module.freeRGBA(srcDataPtr);
+  if (dstDataPtr) Module.freeRGBA(dstDataPtr);
   if (texture) texture.destroy();
 
   h = config.canvasHeight;
 
   cvs.width = w;
   cvs.height = h;
-  srcData = allocWasmImage(w, h);
-  Module.generateSomeData(w, h, srcData.byteOffset);
+  srcDataPtr = Module.allocRGBA(w * h);
+  console.log(srcDataPtr);
+  Module.generateSomeData(w, h, srcDataPtr);
 
-  dstData = allocWasmImage(w, h);
+  dstDataPtr = Module.allocRGBA(w * h);
+  console.log('srcDataPtr:', srcDataPtr);
+  console.log('dstDataPtr:', dstDataPtr);
 
   texture = device.createTexture({
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
@@ -75,7 +71,7 @@ const shaderModule = device.createShaderModule({
     @fragment
     fn fmain_interesting(@builtin(position) coord: vec4f) -> @location(0) vec4f {
       let c = textureLoad(tex, vec2<u32>(coord.xy), 0);
-      return vec4f(dpdx(c.x) + dpdy(c.x), 0, 0, 1);
+      return vec4f(c.gr, 0, 1);
     }
   `,
 });
@@ -125,9 +121,13 @@ function render() {
 function iteration(frameNum) {
   const t0 = performance.now();
   if (config.mode === 'writeTexture') {
-    Module.fillImage(w, h, frameNum, srcData.byteOffset, dstData.byteOffset);
+    Module.fillImage(w, h, frameNum, srcDataPtr, dstDataPtr);
     const t1 = performance.now();
-    device.queue.writeTexture({ texture }, dstData, { bytesPerRow: w * 4 }, [w, h]);
+    device.queue.writeTexture(
+      { texture },
+      new Uint32Array(Module.memory.buffer, dstDataPtr, w * h),
+      { bytesPerRow: w * 4 },
+      [w, h]);
     const t2 = performance.now();
     render();
     const t3 = performance.now();
