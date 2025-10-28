@@ -7,9 +7,18 @@ export declare const memory: WebAssembly.Memory;
  */
 export declare function allocRGBA(size: number): number;
 /**
- * assembly/index/fillImage
- * @param w `i32`
- * @param h `i32`
+ * assembly/index/generateSomeData
+ * @param w `u32`
+ * @param h `u32`
  * @param ptr `usize`
  */
-export declare function fillImage(w: number, h: number, ptr: number): void;
+export declare function generateSomeData(w: number, h: number, ptr: number): void;
+/**
+ * assembly/index/fillImage
+ * @param w `u32`
+ * @param h `u32`
+ * @param t `u32`
+ * @param src `usize`
+ * @param dst `usize`
+ */
+export declare function fillImage(w: number, h: number, t: number, src: number, dst: number): void;

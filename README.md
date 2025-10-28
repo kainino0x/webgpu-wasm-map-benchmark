@@ -2,7 +2,7 @@ Run:
 
 ```sh
 npm ci
-npm start
+npm start  # Uses site isolation for high-precision timestamps
 ```
 
 Rebuild:

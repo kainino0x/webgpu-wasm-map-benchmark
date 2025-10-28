@@ -54,6 +54,10 @@ export const fail = (() => {
   };
 })();
 
+if (!window.crossOriginIsolated) {
+  fail('should be cross-origin isolated');
+}
+
 // Get a WebGPU device. Triggers an error dialog if it fails.
 
 const adapter = await navigator.gpu.requestAdapter();

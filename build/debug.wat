@@ -6,6 +6,7 @@
  (type $4 (func (param i32 i32 i32 i32)))
  (type $5 (func (param i32 i32 i64) (result i32)))
  (type $6 (func))
+ (type $7 (func (param i32 i32 i32 i32 i32)))
  (import "env" "abort" (func $~lib/builtins/abort (param i32 i32 i32 i32)))
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $~lib/native/ASC_LOW_MEMORY_LIMIT i32 (i32.const 0))
@@ -20,6 +21,7 @@
  (table $0 1 1 funcref)
  (elem $0 (i32.const 1))
  (export "allocRGBA" (func $assembly/index/allocRGBA))
+ (export "generateSomeData" (func $assembly/index/generateSomeData))
  (export "fillImage" (func $assembly/index/fillImage))
  (export "memory" (memory $0))
  (func $~lib/rt/tlsf/Root#set:flMap (param $this i32) (param $flMap i32)
@@ -1508,7 +1510,17 @@
   call $~lib/memory/heap.alloc
   return
  )
- (func $assembly/index/fillImage (param $w i32) (param $h i32) (param $ptr i32)
+ (func $assembly/index/pixel (param $x i32) (param $y i32) (result i32)
+  i32.const -16777216
+  local.get $x
+  local.get $y
+  i32.const 32
+  i32.mul
+  i32.xor
+  i32.or
+  return
+ )
+ (func $assembly/index/generateSomeData (param $w i32) (param $h i32) (param $ptr i32)
   (local $y i32)
   (local $x i32)
   local.get $ptr
@@ -1518,7 +1530,7 @@
   if
    i32.const 160
    i32.const 208
-   i32.const 8
+   i32.const 12
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1528,14 +1540,14 @@
   loop $for-loop|0
    local.get $y
    local.get $h
-   i32.lt_s
+   i32.lt_u
    if
     i32.const 0
     local.set $x
     loop $for-loop|1
      local.get $x
      local.get $w
-     i32.lt_s
+     i32.lt_u
      if
       local.get $ptr
       local.get $y
@@ -1546,7 +1558,9 @@
       i32.const 4
       i32.mul
       i32.add
-      i32.const 1
+      local.get $x
+      local.get $y
+      call $assembly/index/pixel
       i32.store
       local.get $x
       i32.const 1
@@ -1562,5 +1576,41 @@
     br $for-loop|0
    end
   end
+ )
+ (func $assembly/index/fillImage (param $w i32) (param $h i32) (param $t i32) (param $src i32) (param $dst i32)
+  (local $size i32)
+  (local $split i32)
+  local.get $w
+  local.get $h
+  i32.mul
+  i32.const 4
+  i32.mul
+  local.set $size
+  local.get $t
+  local.get $h
+  i32.rem_u
+  local.get $w
+  i32.mul
+  i32.const 4
+  i32.mul
+  local.set $split
+  local.get $dst
+  local.get $size
+  i32.add
+  local.get $split
+  i32.sub
+  local.get $src
+  local.get $split
+  memory.copy
+  local.get $dst
+  i32.const 0
+  i32.add
+  local.get $src
+  local.get $split
+  i32.add
+  local.get $size
+  local.get $split
+  i32.sub
+  memory.copy
  )
 )

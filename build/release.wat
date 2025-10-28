@@ -5,6 +5,7 @@
  (type $3 (func (param i32 i32) (result i32)))
  (type $4 (func (param i32) (result i32)))
  (type $5 (func (param i32 i32 i32)))
+ (type $6 (func (param i32 i32 i32 i32 i32)))
  (import "env" "abort" (func $~lib/builtins/abort (param i32 i32 i32 i32)))
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (memory $0 1)
@@ -13,6 +14,7 @@
  (data $1 (i32.const 1100) "<")
  (data $1.1 (i32.const 1112) "\02\00\00\00\1e\00\00\00~\00l\00i\00b\00/\00r\00t\00/\00t\00l\00s\00f\00.\00t\00s")
  (export "allocRGBA" (func $assembly/index/allocRGBA))
+ (export "generateSomeData" (func $assembly/index/generateSomeData))
  (export "fillImage" (func $assembly/index/fillImage))
  (export "memory" (memory $0))
  (func $~lib/rt/tlsf/removeBlock (param $0 i32) (param $1 i32)
@@ -726,20 +728,20 @@
   i32.const 4
   i32.add
  )
- (func $assembly/index/fillImage (param $0 i32) (param $1 i32) (param $2 i32)
+ (func $assembly/index/generateSomeData (param $0 i32) (param $1 i32) (param $2 i32)
   (local $3 i32)
   (local $4 i32)
   loop $for-loop|0
    local.get $1
    local.get $4
-   i32.gt_s
+   i32.gt_u
    if
     i32.const 0
     local.set $3
     loop $for-loop|1
      local.get $0
      local.get $3
-     i32.gt_s
+     i32.gt_u
      if
       local.get $2
       local.get $0
@@ -750,7 +752,13 @@
       i32.const 2
       i32.shl
       i32.add
-      i32.const 1
+      local.get $3
+      local.get $4
+      i32.const 5
+      i32.shl
+      i32.xor
+      i32.const -16777216
+      i32.or
       i32.store
       local.get $3
       i32.const 1
@@ -766,5 +774,36 @@
     br $for-loop|0
    end
   end
+ )
+ (func $assembly/index/fillImage (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (param $4 i32)
+  (local $5 i32)
+  local.get $0
+  local.get $1
+  i32.mul
+  i32.const 2
+  i32.shl
+  local.tee $5
+  local.get $4
+  i32.add
+  local.get $2
+  local.get $1
+  i32.rem_u
+  local.get $0
+  i32.mul
+  i32.const 2
+  i32.shl
+  local.tee $0
+  i32.sub
+  local.get $3
+  local.get $0
+  memory.copy
+  local.get $4
+  local.get $0
+  local.get $3
+  i32.add
+  local.get $5
+  local.get $0
+  i32.sub
+  memory.copy
  )
 )
