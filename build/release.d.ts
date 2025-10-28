@@ -7,6 +7,11 @@ export declare const memory: WebAssembly.Memory;
  */
 export declare function allocRGBA(size: number): number;
 /**
+ * assembly/index/freeRGBA
+ * @param ptr `usize`
+ */
+export declare function freeRGBA(ptr: number): void;
+/**
  * assembly/index/generateSomeData
  * @param w `u32`
  * @param h `u32`

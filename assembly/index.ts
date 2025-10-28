@@ -3,8 +3,12 @@ export function allocRGBA(size: usize): usize {
   return heap.alloc(size * 4);
 }
 
+export function freeRGBA(ptr: usize): void {
+  heap.free(ptr);
+}
+
 function pixel(x: u32, y: u32): u32 {
-  return 0xff000000 | (x ^ (y * 32));
+  return 0xff000000 | ((x / 2 - y / 32) ^ (y * 2));
 }
 
 /** Fill an array at a given raw pointer to Wasm memory with some image data. */

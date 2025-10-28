@@ -1,4 +1,4 @@
-import { config, timing } from './ui.js';
+import { canvasHeightPane, config, timing } from './ui.js';
 import { device, ctx } from '../util.js';
 import * as Module from '../build/debug.js'; // FIXME
 
@@ -9,19 +9,38 @@ function allocWasmImage(width, height) {
   return new Uint32Array(Module.memory.buffer, ptr, numPixels);
 }
 
-const w = 1920, h = 1080;
-const srcData = allocWasmImage(w, h);
-Module.generateSomeData(w, h, srcData.byteOffset);
+const w = 4096;
+let h = config.canvasHeight;
+let srcData, dstData;
+let texture, bg;
+function reset() {
+  if (srcData) Module.freeRGBA(srcData.byteOffset);
+  if (dstData) Module.freeRGBA(dstData.byteOffset);
+  if (texture) texture.destroy();
 
-const dstData = allocWasmImage(w, h);
+  h = config.canvasHeight;
+
+  cvs.width = w;
+  cvs.height = h;
+  srcData = allocWasmImage(w, h);
+  Module.generateSomeData(w, h, srcData.byteOffset);
+
+  dstData = allocWasmImage(w, h);
+
+  texture = device.createTexture({
+    usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
+    size: [w, h],
+    format: 'rgba8unorm',
+  });
+  bg = device.createBindGroup({
+    layout: bgl,
+    entries: [{ binding: 0, resource: texture.createView() }],
+  });
+
+  frameTimes.length = 0;
+}
 
 ctx.configure({ device, format: 'rgba8unorm' });
-
-const texture = device.createTexture({
-  usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-  size: [w, h],
-  format: 'rgba8unorm',
-});
 
 const bgl = device.createBindGroupLayout({
   entries: [
@@ -33,10 +52,6 @@ const bgl = device.createBindGroupLayout({
   ],
 });
 const pll = device.createPipelineLayout({ bindGroupLayouts: [bgl] });
-const bg = device.createBindGroup({
-  layout: bgl,
-  entries: [{ binding: 0, resource: texture.createView() }],
-});
 
 const shaderModule = device.createShaderModule({
   code: `
@@ -116,22 +131,23 @@ function iteration(frameNum) {
     const t2 = performance.now();
     render();
     const t3 = performance.now();
-    timing.fillImage_jstime = t1 - t0;
-    timing.writeTexture_jstime = t2 - t1;
-    timing.render_jstime = t3 - t2;
+    timing.fillImage_cputime = t1 - t0;
+    timing.writeTexture_cputime = t2 - t1;
+    timing.render_cputime = t3 - t2;
   } else if (config.mode === 'ring of mapped buffers') {
     throw new Error('unimplemented');
   } else {
     throw new Error();
   }
-  timing.total_jstime = performance.now() - t0;
+  timing.total_cputime = performance.now() - t0;
 }
 
 // hack for fast async loop
 const channel = new MessageChannel();
 
-let tLast;
+let tLast = performance.now();
 let frameNum = 0;
+let frameTimes = [];
 function frame() {
   for (const k of Object.keys(timing)) {
     timing[k] = 0;
@@ -141,7 +157,7 @@ function frame() {
   if (config.pause || document.hidden) {
     requestAnimationFrame(frame);
   } else {
-    iteration(frameNum++);
+    iteration(frameNum);
     if (config.vsync) {
       requestAnimationFrame(frame);
     } else {
@@ -149,9 +165,24 @@ function frame() {
     }
   }
   const now = performance.now();
-
-  timing.iteration_time = now - tLast;
+  const dt = now - tLast;
   tLast = now;
+
+  if (frameTimes.length > config.averagingWindow) {
+    frameTimes.length = config.averagingWindow;
+  } else if (frameTimes.length < config.averagingWindow) {
+    frameNum = frameTimes.length;
+    frameTimes.push(0);
+  }
+  timing.iter_time = dt;
+  frameTimes[frameNum % frameTimes.length] = dt;
+  timing.iter_time_mean = frameTimes.reduce((a, x) => a + x, 0) / frameTimes.length;
+  timing.iter_time_samples = frameTimes.length;
+
+  ++frameNum;
 }
 channel.port2.onmessage = frame;
+
+canvasHeightPane.on('change', ev => reset());
+reset();
 frame();

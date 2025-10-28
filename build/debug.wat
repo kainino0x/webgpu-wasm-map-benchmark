@@ -2,11 +2,12 @@
  (type $0 (func (param i32) (result i32)))
  (type $1 (func (param i32 i32)))
  (type $2 (func (param i32 i32) (result i32)))
- (type $3 (func (param i32 i32 i32)))
- (type $4 (func (param i32 i32 i32 i32)))
- (type $5 (func (param i32 i32 i64) (result i32)))
- (type $6 (func))
- (type $7 (func (param i32 i32 i32 i32 i32)))
+ (type $3 (func (param i32)))
+ (type $4 (func (param i32 i32 i32)))
+ (type $5 (func (param i32 i32 i32 i32)))
+ (type $6 (func (param i32 i32 i64) (result i32)))
+ (type $7 (func))
+ (type $8 (func (param i32 i32 i32 i32 i32)))
  (import "env" "abort" (func $~lib/builtins/abort (param i32 i32 i32 i32)))
  (global $~lib/rt/tlsf/ROOT (mut i32) (i32.const 0))
  (global $~lib/native/ASC_LOW_MEMORY_LIMIT i32 (i32.const 0))
@@ -21,6 +22,7 @@
  (table $0 1 1 funcref)
  (elem $0 (i32.const 1))
  (export "allocRGBA" (func $assembly/index/allocRGBA))
+ (export "freeRGBA" (func $assembly/index/freeRGBA))
  (export "generateSomeData" (func $assembly/index/generateSomeData))
  (export "fillImage" (func $assembly/index/fillImage))
  (export "memory" (memory $0))
@@ -1510,11 +1512,93 @@
   call $~lib/memory/heap.alloc
   return
  )
+ (func $~lib/rt/tlsf/checkUsedBlock (param $ptr i32) (result i32)
+  (local $block i32)
+  local.get $ptr
+  i32.const 4
+  i32.sub
+  local.set $block
+  local.get $ptr
+  i32.const 0
+  i32.ne
+  if (result i32)
+   local.get $ptr
+   i32.const 15
+   i32.and
+   i32.eqz
+  else
+   i32.const 0
+  end
+  if (result i32)
+   local.get $block
+   call $~lib/rt/common/BLOCK#get:mmInfo
+   i32.const 1
+   i32.and
+   i32.eqz
+  else
+   i32.const 0
+  end
+  i32.eqz
+  if
+   i32.const 0
+   i32.const 32
+   i32.const 562
+   i32.const 3
+   call $~lib/builtins/abort
+   unreachable
+  end
+  local.get $block
+  return
+ )
+ (func $~lib/rt/tlsf/freeBlock (param $root i32) (param $block i32)
+  i32.const 0
+  drop
+  local.get $block
+  local.get $block
+  call $~lib/rt/common/BLOCK#get:mmInfo
+  i32.const 1
+  i32.or
+  call $~lib/rt/common/BLOCK#set:mmInfo
+  local.get $root
+  local.get $block
+  call $~lib/rt/tlsf/insertBlock
+ )
+ (func $~lib/rt/tlsf/__free (param $ptr i32)
+  local.get $ptr
+  global.get $~lib/memory/__heap_base
+  i32.lt_u
+  if
+   return
+  end
+  global.get $~lib/rt/tlsf/ROOT
+  i32.eqz
+  if
+   call $~lib/rt/tlsf/initialize
+  end
+  global.get $~lib/rt/tlsf/ROOT
+  local.get $ptr
+  call $~lib/rt/tlsf/checkUsedBlock
+  call $~lib/rt/tlsf/freeBlock
+ )
+ (func $~lib/memory/heap.free (param $ptr i32)
+  local.get $ptr
+  call $~lib/rt/tlsf/__free
+ )
+ (func $assembly/index/freeRGBA (param $ptr i32)
+  local.get $ptr
+  call $~lib/memory/heap.free
+ )
  (func $assembly/index/pixel (param $x i32) (param $y i32) (result i32)
   i32.const -16777216
   local.get $x
+  i32.const 2
+  i32.div_u
   local.get $y
   i32.const 32
+  i32.div_u
+  i32.sub
+  local.get $y
+  i32.const 2
   i32.mul
   i32.xor
   i32.or
@@ -1530,7 +1614,7 @@
   if
    i32.const 160
    i32.const 208
-   i32.const 12
+   i32.const 16
    i32.const 3
    call $~lib/builtins/abort
    unreachable

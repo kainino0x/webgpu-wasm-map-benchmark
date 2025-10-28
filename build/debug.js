@@ -38,6 +38,7 @@ async function instantiate(module, imports = {}) {
 export const {
   memory,
   allocRGBA,
+  freeRGBA,
   generateSomeData,
   fillImage,
 } = await (async url => instantiate(
