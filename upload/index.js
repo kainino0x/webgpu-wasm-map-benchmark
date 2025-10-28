@@ -2,7 +2,7 @@ import { canvasHeightPane, config, timing } from './ui.js';
 import { device, ctx } from '../util.js';
 import * as Module from '../build/release.js';
 
-const w = 4096;
+let w = config.canvasWidth;
 let h = config.canvasHeight;
 let srcDataPtr, dstDataPtr;
 let texture, bg;
@@ -16,12 +16,11 @@ function reset() {
   cvs.width = w;
   cvs.height = h;
   srcDataPtr = Module.allocRGBA(w * h);
-  console.log(srcDataPtr);
   Module.generateSomeData(w, h, srcDataPtr);
 
   dstDataPtr = Module.allocRGBA(w * h);
-  console.log('srcDataPtr:', srcDataPtr);
-  console.log('dstDataPtr:', dstDataPtr);
+  console.log('alloc srcDataPtr:', srcDataPtr);
+  console.log('alloc dstDataPtr:', dstDataPtr);
 
   texture = device.createTexture({
     usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
@@ -157,6 +156,8 @@ function frame() {
 
   const t0 = performance.now();
   if (config.pause || document.hidden) {
+    frameTimes.length = 0;
+    tLast = performance.now();
     requestAnimationFrame(frame);
   } else {
     iteration(frameNum);

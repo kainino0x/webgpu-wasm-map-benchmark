@@ -14,6 +14,7 @@ fInfo.addBinding(info, 'architecture', { readonly: true });
 export const config = {
   pause: false,
   vsync: false,
+  canvasWidth: 4096,
   canvasHeight: 2048,
   mode: 'writeTexture',
   interestingShader: false,
@@ -22,6 +23,7 @@ export const config = {
 const fConfig = pane.addFolder({ title: 'Configuration' });
 fConfig.addBinding(config, 'pause');
 fConfig.addBinding(config, 'vsync');
+fConfig.addBinding(config, 'canvasWidth', { min: 4096, max: 4096, step: 1 });
 export const canvasHeightPane = fConfig.addBinding(config, 'canvasHeight', { min: 1, max: 4096, step: 1 });
 fConfig.addBinding(config, 'mode', {
   options: {
