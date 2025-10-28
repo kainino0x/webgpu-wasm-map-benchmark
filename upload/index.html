@@ -1,25 +1,29 @@
 <!DOCTYPE html>
-<html lang=en>
-    <head>
-        <title>wasm to webgpu upload benchmark</title>
-        <style>
-            #cvs {
-                border: 8px solid black;
-                width: 192px;
-                height: 108px;
-            }
-        </style>
-        <script type=module src=index.js></script>
-    </head>
-    <body>
-        <fieldset id=mode>
-            <legend>Mode:</legend>
-            <label><input type=radio name=mode value=writeTexture>writeTexture</label>
-            <label><input type=radio name=mode value=mode2 disabled>mode2</label>
-            <label><input type=radio name=mode value=mode3 disabled>mode3</label>
-        </fieldset>
-        <p><label><input type=checkbox id=enable_shader checked>Use non-trivial WebGPU shader</label></p>
-        <canvas id=cvs width=1920 height=1080></canvas>
-        <p>Canvas is 1920x1080 and scaled down.</p>
-    </body>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>wasm to webgpu upload benchmark</title>
+    <style>
+      body {
+        background: black;
+      }
+      #panediv {
+        width: calc(1920px * 0.2 + 16px * 2);
+        margin: 16px 0;
+      }
+      #panediv * {
+        font-size: 12pt;
+      }
+      #cvs {
+        border: 16px solid gray;
+        width: calc(1920px * 0.2);
+        height: calc(1080px * 0.2);
+      }
+    </style>
+    <script type="module" src="index.js"></script>
+  </head>
+  <body>
+    <div id="panediv"></div>
+    <canvas id="cvs" width="1920" height="1080"></canvas>
+  </body>
 </html>

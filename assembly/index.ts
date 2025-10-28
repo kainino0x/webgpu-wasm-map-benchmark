@@ -1,20 +1,14 @@
-const GL_COLOR_BUFFER_BIT = 0x00004000;
-
-@external("../clearCalls.js", "clearThruJS")
-declare function clearThruJS(gl: externref, mask: i32): void;
-
-@external("../clearCalls.js", "clearNoJS")
-declare function clearNoJS(gl: externref, mask: i32): void;
-
-
-export function clearManyTimesThruJS(gl: externref, count: i32): void {
-  for (let i = 0; i < count; ++i) {
-    clearThruJS(gl, GL_COLOR_BUFFER_BIT);
-  }
+/** Allocate RGBA8 image in Wasm memory. */
+export function allocRGBA(size: usize): usize {
+  return heap.alloc(size * 4);
 }
 
-export function clearManyTimesNoJS(gl: externref, count: i32): void {
-  for (let i = 0; i < count; ++i) {
-    clearNoJS(gl, GL_COLOR_BUFFER_BIT);
+/** Fill an array at a given raw pointer to Wasm memory with some image data. */
+export function fillImage(w: i32, h: i32, ptr: usize): void {
+  assert(ptr !== 0, 'ptr is null');
+  for (let y = 0; y < h; ++y) {
+    for (let x = 0; x < w; ++x) {
+      store<u32>(ptr + (y * w + x) * 4, 1);
+    }
   }
 }
