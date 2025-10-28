@@ -22,7 +22,15 @@ export function generateSomeData(w: u32, h: u32, ptr: usize): void {
 }
 
 /** Very fast way of filling an image with different data each frame. */
-export function fillImage(w: u32, h: u32, t: u32, src: usize, dst: usize): void {
+export function fillImage(
+  w: u32,
+  h: u32,
+  t: u32,
+  src: usize,
+  dst: usize
+): void {
+  assert(src !== 0, "src is null");
+  assert(dst !== 0, "dst is null");
   const size = w * h * 4;
   const split = (t % h) * w * 4;
   memory.copy(dst + size - split, src, split);

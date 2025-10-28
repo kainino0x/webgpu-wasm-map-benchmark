@@ -26,7 +26,8 @@ export const canvasHeightPane = fConfig.addBinding(config, 'canvasHeight', { min
 fConfig.addBinding(config, 'mode', {
   options: {
     'writeTexture': 'writeTexture',
-    'ring of mapped buffers': 'ring of mapped buffers',
+    'copy to mapped buffer': 'copy to mapped buffer',
+    'fill mmapped mapped buffer': 'fill mmapped mapped buffer',
   },
 });
 fConfig.addBinding(config, 'interestingShader');

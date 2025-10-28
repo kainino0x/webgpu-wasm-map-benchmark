@@ -134,8 +134,10 @@ function iteration(frameNum) {
     timing.fillImage_cputime = t1 - t0;
     timing.writeTexture_cputime = t2 - t1;
     timing.render_cputime = t3 - t2;
-  } else if (config.mode === 'ring of mapped buffers') {
+  } else if (config.mode === 'copy to mapped buffer') {
     throw new Error('unimplemented');
+  } else if (config.mode === 'fill mmapped mapped buffer') {
+    throw new Error('unimplemented (obviously)');
   } else {
     throw new Error();
   }
@@ -163,23 +165,23 @@ function frame() {
     } else {
       channel.port1.postMessage(0);
     }
-  }
-  const now = performance.now();
-  const dt = now - tLast;
-  tLast = now;
+    const now = performance.now();
+    const dt = now - tLast;
+    tLast = now;
 
-  if (frameTimes.length > config.averagingWindow) {
-    frameTimes.length = config.averagingWindow;
-  } else if (frameTimes.length < config.averagingWindow) {
-    frameNum = frameTimes.length;
-    frameTimes.push(0);
-  }
-  timing.iter_time = dt;
-  frameTimes[frameNum % frameTimes.length] = dt;
-  timing.iter_time_mean = frameTimes.reduce((a, x) => a + x, 0) / frameTimes.length;
-  timing.iter_time_samples = frameTimes.length;
+    if (frameTimes.length > config.averagingWindow) {
+      frameTimes.length = config.averagingWindow;
+    } else if (frameTimes.length < config.averagingWindow) {
+      frameNum = frameTimes.length;
+      frameTimes.push(0);
+    }
+    timing.iter_time = dt;
+    frameTimes[frameNum % frameTimes.length] = dt;
+    timing.iter_time_mean = frameTimes.reduce((a, x) => a + x, 0) / frameTimes.length;
+    timing.iter_time_samples = frameTimes.length;
 
-  ++frameNum;
+    ++frameNum;
+  }
 }
 channel.port2.onmessage = frame;
 

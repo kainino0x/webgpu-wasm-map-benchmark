@@ -27,11 +27,6 @@ export const fail = (() => {
     dialogText.style.whiteSpace = 'pre-wrap';
     dialogBox.append(dialogText);
 
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'OK';
-    closeBtn.onclick = () => dialogBox.close();
-    dialogBox.append(closeBtn);
-
     return {
       show(msg) {
         // Don't overwrite the dialog message while it's still open
