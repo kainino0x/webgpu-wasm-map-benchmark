@@ -51,11 +51,11 @@ const shaderModule = device.createShaderModule({
 
     @fragment
     fn fmain(@builtin(position) coord: vec4f) -> @location(0) vec4f {
-      let pSrc = vec2u(coord.xy);
-      let pDst = vec2u((pSrc.x + config.dx) % config.w, pSrc.y);
+      let p = vec2u(coord.xy);
+      let pSrc = vec2u((p.x + config.w - config.dx) % config.w, p.y);
 
       let v = src[pSrc.y * config.w + pSrc.x];
-      dst[pDst.y * config.w + pDst.y] = v;
+      dst[p.y * config.w + p.y] = v;
 
       return unpack4x8unorm(v);
     }
@@ -72,7 +72,8 @@ const pipeline = device.createRenderPipeline({
   primitive: { topology: 'triangle-list', },
 });
 
-let buffer1, buffer2, bg;
+let buffer1, buffer2;
+let bg12, bg21;
 let readbackBuffer;
 
 export const GPUPart = {
@@ -102,7 +103,7 @@ export const GPUPart = {
       size: config.canvasWidth * config.canvasHeight * 4,
     });
 
-    bg = device.createBindGroup({
+    bg12 = device.createBindGroup({
       layout: bgl,
       entries: [
         { binding: 0, resource: ubo },
@@ -110,10 +111,23 @@ export const GPUPart = {
         { binding: 2, resource: buffer2 },
       ],
     });
+    bg21 = device.createBindGroup({
+      layout: bgl,
+      entries: [
+        { binding: 0, resource: ubo },
+        { binding: 1, resource: buffer2 },
+        { binding: 2, resource: buffer1 },
+      ],
+    });
+  },
+
+  swap() {
+    [buffer1, buffer2] = [buffer2, buffer1];
+    [bg12, bg21] = [bg21, bg12];
   },
 
   processImage(frameNum) {
-    const dx = 40 * Math.sin(frameNum * 0.05);
+    const dx = 10 * Math.sin(frameNum * 0.05);
     device.queue.writeBuffer(ubo, 0, new Uint32Array([config.canvasWidth, dx]));
     const encoder = device.createCommandEncoder();
     {
@@ -128,7 +142,7 @@ export const GPUPart = {
         ],
       });
       pass.setPipeline(pipeline);
-      pass.setBindGroup(0, bg);
+      pass.setBindGroup(0, bg12);
       pass.draw(6);
       pass.end();
     }

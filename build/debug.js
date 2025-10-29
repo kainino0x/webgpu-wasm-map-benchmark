@@ -17,9 +17,9 @@ async function instantiate(module, imports = {}) {
   const { exports } = await WebAssembly.instantiate(module, adaptedImports);
   const memory = exports.memory || imports.env.memory;
   const adaptedExports = Object.setPrototypeOf({
-    allocRGBA(size) {
+    allocRGBA(numPixels) {
       // assembly/index/allocRGBA(usize) => usize
-      return exports.allocRGBA(size) >>> 0;
+      return exports.allocRGBA(numPixels) >>> 0;
     },
   }, exports);
   function __liftString(pointer) {

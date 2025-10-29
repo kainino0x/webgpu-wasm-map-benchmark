@@ -6,14 +6,17 @@ import { GPUPart } from './gpupart.js';
 async function iteration() {
   const t0 = performance.now();
 
-  // 1. CPU-side processing step
+  // 1. CPU-side processing step (CPU data1 -> CPU data2)
   CPUPart.processImage(frameNum);
   const t1 = performance.now();
 
-  // 2. Upload (CPU -> GPU)
+  // 2. Upload (CPU 2 -> GPU 1)
   switch (config.uploadMethod) {
     case 'none':
-      break;
+      {
+        // If not uploading data to GPU, just swap the two GPU buffers.
+        GPUPart.swap();
+      } break;
     case 'write':
       {
         device.queue.writeBuffer(GPUPart.buffer1, 0, CPUPart.data2View);
@@ -27,21 +30,22 @@ async function iteration() {
   }
   const t2 = performance.now();
 
-  // 3. GPU-side processing step
+  // 3. GPU-side processing step (GPU data1 -> GPU data2)
+  //    (The output of this step is what's visible.)
   GPUPart.readbackBuffer.unmap();
   GPUPart.processImage(frameNum);
+  await GPUPart.readbackBuffer.mapAsync(GPUMapMode.READ);
   const t3 = performance.now();
 
-  // 4. Download (GPU -> CPU)
+  // 4. Download (GPU data2 -> CPU data1)
   switch (config.downloadMethod) {
     case 'none':
       {
-        await yieldUnthrottled();
+        // If not downloading data to CPU, just swap the two CPU buffers.
+        CPUPart.swap();
       } break;
     case 'copy':
       {
-        // TODO: Should this be double-buffered?
-        await GPUPart.readbackBuffer.mapAsync(GPUMapMode.READ);
         CPUPart.data1View.set(GPUPart.readbackBuffer.getMappedRange());
       } break;
     case 'mmap':

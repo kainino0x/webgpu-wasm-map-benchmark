@@ -1,6 +1,6 @@
 /** Allocate RGBA8 image in Wasm memory. */
-export function allocRGBA(size: usize): usize {
-  const ptr = heap.alloc(size * 4);
+export function allocRGBA(numPixels: usize): usize {
+  const ptr = heap.alloc(numPixels * 4);
   assert(ptr !== 0, "failed to allocate?");
   return ptr;
 }
@@ -38,6 +38,6 @@ export function processImage(
   assert(dst !== 0, "dst is null");
   const size = w * h * 4;
   const split = ((dy + h) % h) * w * 4;
-  memory.copy(dst + size - split, src, split);
-  memory.copy(dst + 0, src + split, size - split);
+  memory.copy(dst + split, src, size - split);
+  memory.copy(dst + 0, src + size - split, split);
 }

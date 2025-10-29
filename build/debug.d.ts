@@ -2,10 +2,10 @@
 export declare const memory: WebAssembly.Memory;
 /**
  * assembly/index/allocRGBA
- * @param size `usize`
+ * @param numPixels `usize`
  * @returns `usize`
  */
-export declare function allocRGBA(size: number): number;
+export declare function allocRGBA(numPixels: number): number;
 /**
  * assembly/index/freeRGBA
  * @param ptr `usize`

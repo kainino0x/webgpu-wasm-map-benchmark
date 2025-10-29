@@ -1508,9 +1508,9 @@
   call $~lib/rt/tlsf/__alloc
   return
  )
- (func $assembly/index/allocRGBA (param $size i32) (result i32)
+ (func $assembly/index/allocRGBA (param $numPixels i32) (result i32)
   (local $ptr i32)
-  local.get $size
+  local.get $numPixels
   i32.const 4
   i32.mul
   call $~lib/memory/heap.alloc
@@ -1723,22 +1723,22 @@
   i32.mul
   local.set $split
   local.get $dst
-  local.get $size
+  local.get $split
   i32.add
+  local.get $src
+  local.get $size
   local.get $split
   i32.sub
-  local.get $src
-  local.get $split
   memory.copy
   local.get $dst
   i32.const 0
   i32.add
   local.get $src
-  local.get $split
-  i32.add
   local.get $size
+  i32.add
   local.get $split
   i32.sub
+  local.get $split
   memory.copy
  )
 )
