@@ -1,31 +1,13 @@
 import { canvasHeightPane, config, timing } from './ui.js';
-import { device } from './util.js';
-import { GPUPart } from './webgpupart.js';
-import * as CPUPart from '../build/release.js';
-
-let data1Ptr, data2Ptr;
-function reset() {
-  if (data1Ptr) CPUPart.freeRGBA(data1Ptr);
-  data1Ptr = CPUPart.allocRGBA(config.canvasWidth * config.canvasHeight);
-  CPUPart.generateSomeData(config.canvasWidth, config.canvasHeight, data1Ptr);
-
-  if (data2Ptr) CPUPart.freeRGBA(data2Ptr);
-  data2Ptr = CPUPart.allocRGBA(config.canvasWidth * config.canvasHeight);
-
-  cvs.width = config.canvasWidth;
-  cvs.height = config.canvasHeight;
-
-  GPUPart.reset();
-
-  frameTimes.length = 0;
-}
+import { device, yieldUnthrottled } from './util.js';
+import { CPUPart } from './cpupart.js';
+import { GPUPart } from './gpupart.js';
 
 async function iteration() {
   const t0 = performance.now();
 
   // 1. CPU-side processing step
-  const dy = 10 * Math.sin(frameNum * 0.01);
-  CPUPart.processImage(config.canvasWidth, config.canvasHeight, dy, data1Ptr, data2Ptr);
+  CPUPart.processImage(frameNum);
   const t1 = performance.now();
 
   // 2. Upload (CPU -> GPU)
@@ -34,8 +16,7 @@ async function iteration() {
       break;
     case 'write':
       {
-        device.queue.writeBuffer(GPUPart.buffer1, 0,
-          new Uint32Array(CPUPart.memory.buffer, data2Ptr, config.canvasWidth * config.canvasHeight));
+        device.queue.writeBuffer(GPUPart.buffer1, 0, CPUPart.data2View);
       } break;
     case 'copy':
       throw new Error('unimplemented');
@@ -47,15 +28,22 @@ async function iteration() {
   const t2 = performance.now();
 
   // 3. GPU-side processing step
+  GPUPart.readbackBuffer.unmap();
   GPUPart.processImage(frameNum);
   const t3 = performance.now();
 
   // 4. Download (GPU -> CPU)
   switch (config.downloadMethod) {
     case 'none':
-      break;
+      {
+        await yieldUnthrottled();
+      } break;
     case 'copy':
-      throw new Error('unimplemented');
+      {
+        // TODO: Should this be double-buffered?
+        await GPUPart.readbackBuffer.mapAsync(GPUMapMode.READ);
+        CPUPart.data1View.set(GPUPart.readbackBuffer.getMappedRange());
+      } break;
     case 'mmap':
       throw new Error('unimplemented (obviously)');
     default:
@@ -63,34 +51,36 @@ async function iteration() {
   }
   const t4 = performance.now();
 
-  timing.cpuProcessing_cputime = t1 - t0;
-  timing.upload_cputime = t2 - t1;
-  timing.gpuProcessing_roundtrip = t3 - t2;
-  timing.download_cputime = t4 - t3;
+  timing.cpuProcessing_cpuTime = t1 - t0;
+  timing.upload_cpuTime = t2 - t1;
+  timing.gpuProcessing_rtTime = t3 - t2;
+  timing.download_cpuTime = t4 - t3;
 }
-
-// hack for fast async loop
-const channel = new MessageChannel();
 
 let tLast = performance.now();
 let frameNum = 0;
 let frameTimes = [];
-function frame() {
-  for (const k of Object.keys(timing)) {
-    timing[k] = 0;
-  }
 
+function reset() {
+  CPUPart.reset();
+  GPUPart.reset();
+  frameTimes.length = 0;
+}
+canvasHeightPane.on('change', ev => reset());
+reset();
+
+// Async main loop
+while (true) {
   if (config.pause || document.hidden) {
+    for (const k of Object.keys(timing)) {
+      timing[k] = 0;
+    }
     frameTimes.length = 0;
     tLast = performance.now();
-    requestAnimationFrame(frame);
+    await new Promise(requestAnimationFrame);
   } else {
-    iteration();
-    if (config.vsync) {
-      requestAnimationFrame(frame);
-    } else {
-      channel.port1.postMessage(0);
-    }
+    await iteration();
+
     const now = performance.now();
     const dt = now - tLast;
     tLast = now;
@@ -109,8 +99,3 @@ function frame() {
     ++frameNum;
   }
 }
-channel.port2.onmessage = frame;
-
-canvasHeightPane.on('change', ev => reset());
-reset();
-frame();

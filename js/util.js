@@ -68,3 +68,13 @@ device.onuncapturederror = ev => {
   fail(`WebGPU error: ${ev.error.message}`);
 };
 export const ctx = cvs.getContext('webgpu');
+
+// Hack for fast async yield
+const channel = new MessageChannel();
+export function yieldUnthrottled() {
+  const p = new Promise(resolve => {
+    channel.port2.onmessage = resolve;
+  });
+  channel.port1.postMessage(0);
+  return p;
+}

@@ -73,21 +73,32 @@ const pipeline = device.createRenderPipeline({
 });
 
 let buffer1, buffer2, bg;
+let readbackBuffer;
 
 export const GPUPart = {
   get buffer1() { return buffer1; },
   get buffer2() { return buffer2; },
+  get readbackBuffer() { return readbackBuffer; },
 
   reset() {
-    if (buffer1) buffer.destroy();
+    cvs.width = config.canvasWidth;
+    cvs.height = config.canvasHeight;
+
+    if (buffer1) buffer1.destroy();
     buffer1 = device.createBuffer({
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+      usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
       size: config.canvasWidth * config.canvasHeight * 4,
     });
 
-    if (buffer2) buffer.destroy();
+    if (buffer2) buffer2.destroy();
     buffer2 = device.createBuffer({
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+      usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+      size: config.canvasWidth * config.canvasHeight * 4,
+    });
+
+    if (readbackBuffer) readbackBuffer.destroy();
+    readbackBuffer = device.createBuffer({
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
       size: config.canvasWidth * config.canvasHeight * 4,
     });
 
@@ -121,6 +132,8 @@ export const GPUPart = {
       pass.draw(6);
       pass.end();
     }
+    encoder.copyBufferToBuffer(
+      buffer2, 0, readbackBuffer, 0, config.canvasWidth * config.canvasHeight * 4);
     device.queue.submit([encoder.finish()]);
   },
 };
