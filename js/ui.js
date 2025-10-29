@@ -4,10 +4,12 @@ import { device } from './util.js';
 const pane = new Pane();
 
 const info = {
+  highPrecisionTimestamps: window.crossOriginIsolated,
   vendor: device.adapterInfo.vendor,
   architecture: device.adapterInfo.architecture,
 };
 const fInfo = pane.addFolder({ title: 'Info' });
+fInfo.addBinding(info, 'highPrecisionTimestamps', { readonly: true });
 fInfo.addBinding(info, 'vendor', { readonly: true });
 fInfo.addBinding(info, 'architecture', { readonly: true });
 
@@ -20,9 +22,10 @@ export const config = {
   numSamplesForMean: 200,
 };
 const fConfig = pane.addFolder({ title: 'Configuration' });
+fConfig.on('change', () => needReset = true);
 fConfig.addBinding(config, 'pause');
 fConfig.addBinding(config, 'canvasWidth', { min: 4096, max: 4096, step: 1 });
-export const canvasHeightPane = fConfig.addBinding(config, 'canvasHeight', { min: 1, max: 4096, step: 1 });
+fConfig.addBinding(config, 'canvasHeight', { min: 1, max: 4096, step: 1 });
 fConfig.addBinding(config, 'uploadMethod', {
   options: {
     'none': 'none',
@@ -58,3 +61,11 @@ fTiming.addBlade({ view: 'separator' });
 fTiming.addBinding(timing, 'iter_time', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'iter_time_mean', { readonly: true, format: v => v.toFixed(6) });
 fTiming.addBinding(timing, 'iter_time_samples', { readonly: true, format: v => v.toFixed(0) });
+
+let needReset = true;
+export function resetIfNeeded(fn) {
+  if (needReset) {
+    fn();
+    needReset = false;
+  }
+}

@@ -1,16 +1,17 @@
-import { canvasHeightPane, config, timing } from './ui.js';
+import { resetIfNeeded, config, timing } from './ui.js';
 import { device } from './util.js';
 import { CPUPart } from './cpupart.js';
 import { GPUPart } from './gpupart.js';
 import { UploadPool } from './gpuUploadPool.js';
 
 async function iteration() {
-  if (needReset) {
+  resetIfNeeded(() => {
     CPUPart.reset();
     GPUPart.reset();
     frameTimes.length = 0;
-    needReset = false;
-  }
+    // Don't record stats this iteration.
+    warmupIterationsRemaining = 1;
+  });
 
   const t0 = performance.now();
 
@@ -83,8 +84,7 @@ async function iteration() {
 let tLast = performance.now();
 let frameNum = 0;
 let frameTimes = [];
-let needReset = true;
-canvasHeightPane.on('change', ev => { needReset = true; });
+let warmupIterationsRemaining = 0;
 
 // Async main loop
 while (true) {
@@ -93,7 +93,6 @@ while (true) {
       timing[k] = 0;
     }
     frameTimes.length = 0;
-    tLast = performance.now();
     await new Promise(requestAnimationFrame);
   } else {
     await iteration();
@@ -102,16 +101,20 @@ while (true) {
     const dt = now - tLast;
     tLast = now;
 
-    if (frameTimes.length > config.numSamplesForMean) {
-      frameTimes.length = config.numSamplesForMean;
-    } else if (frameTimes.length < config.numSamplesForMean) {
-      frameNum = frameTimes.length;
-      frameTimes.push(0);
+    if (warmupIterationsRemaining > 0) {
+      --warmupIterationsRemaining;
+    } else {
+      if (frameTimes.length > config.numSamplesForMean) {
+        frameTimes.length = config.numSamplesForMean;
+      } else if (frameTimes.length < config.numSamplesForMean) {
+        frameNum = frameTimes.length;
+        frameTimes.push(0);
+      }
+      timing.iter_time = dt;
+      frameTimes[frameNum % frameTimes.length] = dt;
+      timing.iter_time_mean = frameTimes.reduce((a, x) => a + x, 0) / frameTimes.length;
+      timing.iter_time_samples = frameTimes.length;
     }
-    timing.iter_time = dt;
-    frameTimes[frameNum % frameTimes.length] = dt;
-    timing.iter_time_mean = frameTimes.reduce((a, x) => a + x, 0) / frameTimes.length;
-    timing.iter_time_samples = frameTimes.length;
 
     ++frameNum;
   }
