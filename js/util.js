@@ -1,3 +1,5 @@
+import { config } from './ui.js';
+
 // Show an error dialog if there's any uncaught exception or promise rejection.
 // This gets set up on all pages that include util.js.
 globalThis.addEventListener('unhandledrejection', (ev) => {
@@ -44,6 +46,7 @@ export const fail = (() => {
   return (message) => {
     if (!output) output = createErrorOutput();
 
+    config.pause = true;
     output.show(message);
     throw new Error(message);
   };
@@ -58,4 +61,10 @@ if (!window.crossOriginIsolated) {
 const adapter = await navigator.gpu.requestAdapter();
 
 export const device = await adapter.requestDevice();
+device.lost.then(lostInfo => {
+  fail(`Lost device (${lostInfo.reason}): ${lostInfo.message}`);
+});
+device.onuncapturederror = ev => {
+  fail(`WebGPU error: ${ev.error.message}`);
+};
 export const ctx = cvs.getContext('webgpu');

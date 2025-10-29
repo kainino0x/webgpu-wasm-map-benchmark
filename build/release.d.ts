@@ -19,11 +19,11 @@ export declare function freeRGBA(ptr: number): void;
  */
 export declare function generateSomeData(w: number, h: number, ptr: number): void;
 /**
- * assembly/index/fillImage
+ * assembly/index/processImage
  * @param w `u32`
  * @param h `u32`
- * @param t `u32`
+ * @param dy `u32`
  * @param src `usize`
  * @param dst `usize`
  */
-export declare function fillImage(w: number, h: number, t: number, src: number, dst: number): void;
+export declare function processImage(w: number, h: number, dy: number, src: number, dst: number): void;

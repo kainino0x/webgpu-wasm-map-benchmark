@@ -1,5 +1,5 @@
 import { Pane } from 'https://cdn.jsdelivr.net/npm/tweakpane@4.0.5/dist/tweakpane.min.js';
-import { device, ctx } from '../util.js';
+import { device } from './util.js';
 
 const pane = new Pane();
 
@@ -16,40 +16,48 @@ export const config = {
   vsync: false,
   canvasWidth: 4096,
   canvasHeight: 2048,
-  mode: 'writeTexture',
-  interestingShader: false,
-  averagingWindow: 200,
+  uploadMethod: 'write',
+  downloadMethod: 'none',
+  interestingShader: true,
+  numSamplesForMean: 200,
 };
 const fConfig = pane.addFolder({ title: 'Configuration' });
 fConfig.addBinding(config, 'pause');
 fConfig.addBinding(config, 'vsync');
 fConfig.addBinding(config, 'canvasWidth', { min: 4096, max: 4096, step: 1 });
 export const canvasHeightPane = fConfig.addBinding(config, 'canvasHeight', { min: 1, max: 4096, step: 1 });
-fConfig.addBinding(config, 'mode', {
+fConfig.addBinding(config, 'uploadMethod', {
   options: {
-    'writeTexture': 'writeTexture',
-    'copy to mapped buffer': 'copy to mapped buffer',
-    'fill mmapped mapped buffer': 'fill mmapped mapped buffer',
+    'none': 'none',
+    'writeTexture from heap': 'write',
+    'copy heap -> mapping': 'copy',
+    'write directly to mmapped mapping': 'mmap',
+  },
+});
+fConfig.addBinding(config, 'downloadMethod', {
+  options: {
+    'none': 'none',
+    'copy mapping -> heap': 'copy',
+    'read directly from mmapped mapping': 'mmap',
   },
 });
 fConfig.addBinding(config, 'interestingShader');
-fConfig.addBinding(config, 'averagingWindow', { min: 1, max: 1000, step: 1 });
+fConfig.addBinding(config, 'numSamplesForMean', { min: 1, max: 1000, step: 1 });
 
 export const timing = {
-  total_cputime: 0,
-  fillImage_cputime: 0,
-  writeTexture_cputime: 0,
-  render_cputime: 0,
+  cpuProcessing_cputime: 0,
+  upload_cputime: 0,
+  gpuProcessing_roundtrip: 0,
+  download_cputime: 0,
   iter_time: 0,
   iter_time_mean: 0,
   iter_time_samples: 0,
 };
 const fTiming = pane.addFolder({ title: 'Timing' });
-fTiming.addBinding(timing, 'total_cputime', { readonly: true, view: 'graph' });
-fTiming.addBlade({ view: 'separator' });
-fTiming.addBinding(timing, 'fillImage_cputime', { readonly: true, view: 'graph' });
-fTiming.addBinding(timing, 'writeTexture_cputime', { readonly: true, view: 'graph' });
-fTiming.addBinding(timing, 'render_cputime', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'cpuProcessing_cputime', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'upload_cputime', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'gpuProcessing_roundtrip', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'download_cputime', { readonly: true, view: 'graph' });
 fTiming.addBlade({ view: 'separator' });
 fTiming.addBinding(timing, 'iter_time', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'iter_time_mean', { readonly: true, format: v => v.toFixed(6) });

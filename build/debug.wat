@@ -27,7 +27,7 @@
  (export "allocRGBA" (func $assembly/index/allocRGBA))
  (export "freeRGBA" (func $assembly/index/freeRGBA))
  (export "generateSomeData" (func $assembly/index/generateSomeData))
- (export "fillImage" (func $assembly/index/fillImage))
+ (export "processImage" (func $assembly/index/processImage))
  (export "memory" (memory $0))
  (func $~lib/rt/tlsf/Root#set:flMap (param $this i32) (param $flMap i32)
   local.get $this
@@ -1679,7 +1679,7 @@
    end
   end
  )
- (func $assembly/index/fillImage (param $w i32) (param $h i32) (param $t i32) (param $src i32) (param $dst i32)
+ (func $assembly/index/processImage (param $w i32) (param $h i32) (param $dy i32) (param $src i32) (param $dst i32)
   (local $size i32)
   (local $split i32)
   local.get $src
@@ -1689,7 +1689,7 @@
   if
    i32.const 336
    i32.const 224
-   i32.const 34
+   i32.const 37
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1701,7 +1701,7 @@
   if
    i32.const 384
    i32.const 224
-   i32.const 35
+   i32.const 38
    i32.const 3
    call $~lib/builtins/abort
    unreachable
@@ -1712,7 +1712,9 @@
   i32.const 4
   i32.mul
   local.set $size
-  local.get $t
+  local.get $dy
+  local.get $h
+  i32.add
   local.get $h
   i32.rem_u
   local.get $w

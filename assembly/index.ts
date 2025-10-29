@@ -23,18 +23,21 @@ export function generateSomeData(w: u32, h: u32, ptr: usize): void {
   }
 }
 
-/** Very fast way of filling an image with different data each frame. */
-export function fillImage(
+/**
+ * Copy from src to dst with a vertical rotation of dy pixels.
+ * This is a very fast way to fill an image with different data each frame.
+ */
+export function processImage(
   w: u32,
   h: u32,
-  t: u32,
+  dy: u32,
   src: usize,
   dst: usize
 ): void {
   assert(src !== 0, "src is null");
   assert(dst !== 0, "dst is null");
   const size = w * h * 4;
-  const split = (t % h) * w * 4;
+  const split = ((dy + h) % h) * w * 4;
   memory.copy(dst + size - split, src, split);
   memory.copy(dst + 0, src + split, size - split);
 }

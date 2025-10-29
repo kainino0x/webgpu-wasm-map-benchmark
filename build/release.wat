@@ -18,7 +18,7 @@
  (export "allocRGBA" (func $assembly/index/allocRGBA))
  (export "freeRGBA" (func $assembly/index/freeRGBA))
  (export "generateSomeData" (func $assembly/index/generateSomeData))
- (export "fillImage" (func $assembly/index/fillImage))
+ (export "processImage" (func $assembly/index/processImage))
  (export "memory" (memory $0))
  (func $~lib/rt/tlsf/removeBlock (param $0 i32) (param $1 i32)
   (local $2 i32)
@@ -830,7 +830,7 @@
    end
   end
  )
- (func $assembly/index/fillImage (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (param $4 i32)
+ (func $assembly/index/processImage (param $0 i32) (param $1 i32) (param $2 i32) (param $3 i32) (param $4 i32)
   (local $5 i32)
   local.get $0
   local.get $1
@@ -840,7 +840,9 @@
   local.tee $5
   local.get $4
   i32.add
+  local.get $1
   local.get $2
+  i32.add
   local.get $1
   i32.rem_u
   local.get $0
