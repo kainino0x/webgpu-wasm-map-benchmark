@@ -46,7 +46,7 @@ async function iteration() {
       } break;
     case 'copy':
       {
-        CPUPart.data1View.set(GPUPart.readbackBuffer.getMappedRange());
+        CPUPart.data1View.set(new Uint32Array(GPUPart.readbackBuffer.getMappedRange()));
       } break;
     case 'mmap':
       throw new Error('unimplemented (obviously)');

@@ -18,7 +18,7 @@ const bgl = device.createBindGroupLayout({
     {
       binding: 1,
       visibility: GPUShaderStage.FRAGMENT,
-      buffer: { type: 'storage' },
+      buffer: { type: 'read-only-storage' },
     },
     {
       binding: 2,
@@ -36,11 +36,11 @@ const shaderModule = device.createShaderModule({
       dx: u32,
     }
     @group(0) @binding(0) var<uniform> config: Config;
-    @group(0) @binding(1) var<storage, read_write> src: array<u32>;
+    @group(0) @binding(1) var<storage, read> src: array<u32>;
     @group(0) @binding(2) var<storage, read_write> dst: array<u32>;
 
     @vertex
-    fn fullscreen_quad(@builtin(vertex_index) vi: u32) -> @builtin(position) vec4f {
+    fn vmain(@builtin(vertex_index) vi: u32) -> @builtin(position) vec4f {
       const pos = array(
         vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0),
         vec2(-1.0, 1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
@@ -55,7 +55,7 @@ const shaderModule = device.createShaderModule({
       let pSrc = vec2u((p.x + config.w - config.dx) % config.w, p.y);
 
       let v = src[pSrc.y * config.w + pSrc.x];
-      dst[p.y * config.w + p.y] = v;
+      dst[p.y * config.w + p.x] = v;
 
       return unpack4x8unorm(v);
     }
@@ -73,7 +73,7 @@ const pipeline = device.createRenderPipeline({
 });
 
 let buffer1, buffer2;
-let bg12, bg21;
+let bg_12, bg_21;
 let readbackBuffer;
 
 export const GPUPart = {
@@ -103,7 +103,7 @@ export const GPUPart = {
       size: config.canvasWidth * config.canvasHeight * 4,
     });
 
-    bg12 = device.createBindGroup({
+    bg_12 = device.createBindGroup({
       layout: bgl,
       entries: [
         { binding: 0, resource: ubo },
@@ -111,7 +111,7 @@ export const GPUPart = {
         { binding: 2, resource: buffer2 },
       ],
     });
-    bg21 = device.createBindGroup({
+    bg_21 = device.createBindGroup({
       layout: bgl,
       entries: [
         { binding: 0, resource: ubo },
@@ -123,11 +123,11 @@ export const GPUPart = {
 
   swap() {
     [buffer1, buffer2] = [buffer2, buffer1];
-    [bg12, bg21] = [bg21, bg12];
+    [bg_12, bg_21] = [bg_21, bg_12];
   },
 
   processImage(frameNum) {
-    const dx = 10 * Math.sin(frameNum * 0.05);
+    const dx = 10 * Math.sin(frameNum * 0.02) ** 2;
     device.queue.writeBuffer(ubo, 0, new Uint32Array([config.canvasWidth, dx]));
     const encoder = device.createCommandEncoder();
     {
@@ -142,7 +142,7 @@ export const GPUPart = {
         ],
       });
       pass.setPipeline(pipeline);
-      pass.setBindGroup(0, bg12);
+      pass.setBindGroup(0, bg_12);
       pass.draw(6);
       pass.end();
     }

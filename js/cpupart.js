@@ -24,7 +24,7 @@ export const CPUPart = {
   },
 
   processImage(frameNum) {
-    const dy = 10 * Math.sin(frameNum * 0.05);
+    const dy = 10 * Math.sin(frameNum * 0.02) ** 2;
     Module.processImage(config.canvasWidth, config.canvasHeight, dy, data1Ptr, data2Ptr);
   },
 };
