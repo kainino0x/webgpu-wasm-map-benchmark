@@ -1,9 +1,17 @@
 import { canvasHeightPane, config, timing } from './ui.js';
-import { device, yieldUnthrottled } from './util.js';
+import { device } from './util.js';
 import { CPUPart } from './cpupart.js';
 import { GPUPart } from './gpupart.js';
+import { UploadPool } from './gpuUploadPool.js';
 
 async function iteration() {
+  if (needReset) {
+    CPUPart.reset();
+    GPUPart.reset();
+    frameTimes.length = 0;
+    needReset = false;
+  }
+
   const t0 = performance.now();
 
   // 1. CPU-side processing step (CPU data1 -> CPU data2)
@@ -11,6 +19,8 @@ async function iteration() {
   const t1 = performance.now();
 
   // 2. Upload (CPU 2 -> GPU 1)
+  let poolBufferToRelease;
+  const commandEncoder = device.createCommandEncoder();
   switch (config.uploadMethod) {
     case 'none':
       {
@@ -22,9 +32,14 @@ async function iteration() {
         device.queue.writeBuffer(GPUPart.buffer1, 0, CPUPart.data2View);
       } break;
     case 'copy':
-      throw new Error('unimplemented');
+      {
+        const b = poolBufferToRelease = UploadPool.acquire();
+        new Uint32Array(b.getMappedRange()).set(CPUPart.data2View);
+        b.unmap();
+        commandEncoder.copyBufferToBuffer(b, 0, GPUPart.buffer1, 0, b.size);
+      } break;
     case 'mmap':
-      throw new Error('unimplemented (obviously)');
+      throw new Error('unimplemented');
     default:
       throw new Error('??');
   }
@@ -32,8 +47,11 @@ async function iteration() {
 
   // 3. GPU-side processing step (GPU data1 -> GPU data2)
   //    (The output of this step is what's visible.)
-  GPUPart.readbackBuffer.unmap();
-  GPUPart.processImage(frameNum);
+  GPUPart.processImage(commandEncoder, frameNum);
+  device.queue.submit([commandEncoder.finish()]);
+  if (poolBufferToRelease) {
+    UploadPool.release(poolBufferToRelease);
+  }
   await GPUPart.readbackBuffer.mapAsync(GPUMapMode.READ);
   const t3 = performance.now();
 
@@ -49,29 +67,24 @@ async function iteration() {
         CPUPart.data1View.set(new Uint32Array(GPUPart.readbackBuffer.getMappedRange()));
       } break;
     case 'mmap':
-      throw new Error('unimplemented (obviously)');
+      throw new Error('unimplemented');
     default:
       throw new Error('??');
   }
+  GPUPart.readbackBuffer.unmap();
   const t4 = performance.now();
 
-  timing.cpuProcessing_cpuTime = t1 - t0;
+  timing.cpuVerticalSlide_cpuTime = t1 - t0;
   timing.upload_cpuTime = t2 - t1;
-  timing.gpuProcessing_rtTime = t3 - t2;
+  timing.gpuHorizontalSlide_rtTime = t3 - t2;
   timing.download_cpuTime = t4 - t3;
 }
 
 let tLast = performance.now();
 let frameNum = 0;
 let frameTimes = [];
-
-function reset() {
-  CPUPart.reset();
-  GPUPart.reset();
-  frameTimes.length = 0;
-}
-canvasHeightPane.on('change', ev => reset());
-reset();
+let needReset = true;
+canvasHeightPane.on('change', ev => { needReset = true; });
 
 // Async main loop
 while (true) {

@@ -15,7 +15,7 @@ export const config = {
   pause: false,
   canvasWidth: 4096,
   canvasHeight: 2048,
-  uploadMethod: 'write',
+  uploadMethod: 'copy',
   downloadMethod: 'copy',
   numSamplesForMean: 200,
 };
@@ -41,18 +41,18 @@ fConfig.addBinding(config, 'downloadMethod', {
 fConfig.addBinding(config, 'numSamplesForMean', { min: 1, max: 1000, step: 1 });
 
 export const timing = {
-  cpuProcessing_cpuTime: 0,
+  cpuVerticalSlide_cpuTime: 0,
   upload_cpuTime: 0,
-  gpuProcessing_rtTime: 0,
+  gpuHorizontalSlide_rtTime: 0,
   download_cpuTime: 0,
   iter_time: 0,
   iter_time_mean: 0,
   iter_time_samples: 0,
 };
 const fTiming = pane.addFolder({ title: 'Timing' });
-fTiming.addBinding(timing, 'cpuProcessing_cpuTime', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'cpuVerticalSlide_cpuTime', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'upload_cpuTime', { readonly: true, view: 'graph' });
-fTiming.addBinding(timing, 'gpuProcessing_rtTime', { readonly: true, view: 'graph' });
+fTiming.addBinding(timing, 'gpuHorizontalSlide_rtTime', { readonly: true, view: 'graph' });
 fTiming.addBinding(timing, 'download_cpuTime', { readonly: true, view: 'graph' });
 fTiming.addBlade({ view: 'separator' });
 fTiming.addBinding(timing, 'iter_time', { readonly: true, view: 'graph' });
